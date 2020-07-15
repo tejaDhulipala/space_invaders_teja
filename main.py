@@ -1,14 +1,18 @@
-import pygame as pg
-from time import perf_counter
 import random
-from math import atan, degrees, cos, sin, radians, ceil
 from functools import reduce
+from math import atan, degrees, cos, sin, radians, ceil
+from time import perf_counter
+
+import pygame as pg
 from pygame import mixer
 
 # Note that if this wasn't a stem from the home screen you would have to initialize pygame
 pg.init()
+
+
 def level(enemy_speedX, enemy_speedY, num_verticals, num_vs, num_rands, verticals_hp, vs_hp, rands_hp, base, hero_hp,
-          laser_cooldown, rockets_in=True, rocket_cooldown=10, limeted_lasers=False, lasers_p_enemy=9, fireballs_in=True,
+          laser_cooldown, rockets_in=True, rocket_cooldown=10, limeted_lasers=False, lasers_p_enemy=9,
+          fireballs_in=True,
           fire_ball_cooldown=0.5, fireball_p_enemy=0.25, boosters=False, ammo_boost=7, hero_boost=300, speed_mul=1.5):
     PIC_PATH = "pics/"
     # create screen
@@ -34,11 +38,12 @@ def level(enemy_speedX, enemy_speedY, num_verticals, num_vs, num_rands, vertical
         booster_base = pg.image.load(f'{PIC_PATH}ammo_booster_base.png')
         booster_hero = pg.image.load(f'{PIC_PATH}hp_boosterpng.png')
         booster_damage = pg.image.load(f'{PIC_PATH}damage_booster.png')
-        booster_and_pic = {'ammo' : booster_ammo, 'base' : booster_base, 'hero' : booster_hero, 'speed' : booster_damage}
+        booster_and_pic = {'ammo': booster_ammo, 'base': booster_base, 'hero': booster_hero, 'speed': booster_damage}
 
     # Distance
     def distance(x1, y1, x2, y2):
         return round(((x1 - x2) ** 2 + (y1 - y2) ** 2) ** 0.5, 1)
+
     # Global variables
     rocketCooldown = -rocket_cooldown
     rocket_fired_tm = 0
@@ -93,7 +98,7 @@ def level(enemy_speedX, enemy_speedY, num_verticals, num_vs, num_rands, vertical
                 pg.sprite.Sprite.__init__(self, booster_group)
 
             def draw(self):
-                screen.blit(self.image ,(self.x + 16, self.y + 15))
+                screen.blit(self.image, (self.x + 16, self.y + 15))
 
             def update(self):
                 self.y += 0.5 * lag_multiplier
@@ -157,13 +162,12 @@ def level(enemy_speedX, enemy_speedY, num_verticals, num_vs, num_rands, vertical
 
         def move_left(self):
             self.x -= 0.9 * lag_multiplier * booster_speed_multiplier
+
         def move_right(self):
             self.x += 0.9 * lag_multiplier * booster_speed_multiplier
 
-
     # Explosion group
     exploded = pg.sprite.Group()
-
 
     # explosion class
     class Explosion(pg.sprite.Sprite):
@@ -189,6 +193,7 @@ def level(enemy_speedX, enemy_speedY, num_verticals, num_vs, num_rands, vertical
     spawn_min = -40
     spawn_max = 0
     wave_distance = 60
+
     # Enemy Class
     class Enemy(pg.sprite.Sprite):
         def __init__(self, descent, hp, image=enemyImg):
@@ -216,7 +221,6 @@ def level(enemy_speedX, enemy_speedY, num_verticals, num_vs, num_rands, vertical
 
         def update(self):
             self.x, self.y, self.x_change = list(self.descent(self.x, self.y, self.x_change, self.y_change))
-
 
     # Laser class
     class Laser(pg.sprite.Sprite):
@@ -275,7 +279,6 @@ def level(enemy_speedX, enemy_speedY, num_verticals, num_vs, num_rands, vertical
                     self.x -= x_change
                     self.y -= y_change
 
-
     # V-descent
     def v_descent(x, y, x_change, y_change):
         if x >= 736:
@@ -286,10 +289,8 @@ def level(enemy_speedX, enemy_speedY, num_verticals, num_vs, num_rands, vertical
             x_c = x_change
         return x + x_c, y + y_change, x_c
 
-
     def y_descent(x, y, x_change, y_change):
         return x, y + y_change * 5, x_change
-
 
     def random_descent(x, y, x_change, y_change):
         if x >= 736 or random.randint(0, 200) == 17:
@@ -300,23 +301,19 @@ def level(enemy_speedX, enemy_speedY, num_verticals, num_vs, num_rands, vertical
             x_c = x_change
         return x + x_c, y + y_change, x_c
 
-
     # Create 5 enemies
 
     [weapons_n_aliens.add(Enemy(v_descent, vs_hp)) for _ in range(num_vs)]
     [weapons_n_aliens.add(Enemy(y_descent, verticals_hp)) for _ in range(num_verticals)]
     [weapons_n_aliens.add(Enemy(random_descent, rands_hp)) for _ in range(num_rands)]
 
-
     ourHero = Hero(370, 480, hero_hp)
 
     font = pg.font.Font('freesansbold.ttf', 20)
 
-
     def show_text(x, y, text):
         score = font.render(text, True, (255, 255, 255))
         screen.blit(score, (int(x), int(y)))
-
 
     frames = 0
     while running:
@@ -358,7 +355,8 @@ def level(enemy_speedX, enemy_speedY, num_verticals, num_vs, num_rands, vertical
             b.launch_rocket()
             rocket_fired_tm = perf_counter()
             rocketCooldown = rocket_cooldown
-        elif keys[pg.K_SPACE] and perf_counter() - fireball_fired_tm > fireballCooldown and weapon == 'fireball' and fire_ball_ammo > 0:
+        elif keys[
+            pg.K_SPACE] and perf_counter() - fireball_fired_tm > fireballCooldown and weapon == 'fireball' and fire_ball_ammo > 0:
             [Fireball(ourHero.x, ourHero.y, ang) for ang in range(0, 91, 30)]
             [Fireball(ourHero.x, ourHero.y, ang) for ang in range(270, 360, 30)]
             fireball_fired_tm = perf_counter()
@@ -425,12 +423,11 @@ def level(enemy_speedX, enemy_speedY, num_verticals, num_vs, num_rands, vertical
                 enemies.remove(enemy)
                 weapons_n_aliens.remove(enemy)
                 ourHero.hp -= 500
-        #Booster is_hit loop
+        # Booster is_hit loop
         for booster in booster_group:
             if distance(booster.x, booster.y, ourHero.x, ourHero.y) < 32 * 1.42:
                 booster_group.remove(booster)
                 booster.apply_boost()
-
 
         if ourHero.hp <= 0 and not hero_dead:
             Explosion(100, ourHero.rect.center[0] + ourHero.x, ourHero.rect.center[1] + ourHero.y)
@@ -516,7 +513,8 @@ def level(enemy_speedX, enemy_speedY, num_verticals, num_vs, num_rands, vertical
             running2 = False
         pg.display.update()
 
-#enemy_speedX, enemy_speedY, num_verticals, num_vs, num_rands, verticals_hp, vs_hp, rands_hp, base, hero_hp,
+
+# enemy_speedX, enemy_speedY, num_verticals, num_vs, num_rands, verticals_hp, vs_hp, rands_hp, base, hero_hp,
 #          laser_cooldown, rockets_in=True, rocket_cooldown=10, limeted_lasers=False, lasers_p_enemy=9, fireballs_in=True,
 #          fire_ball_cooldown=0.5, fireball_p_enemy=0.25, boosters=False, ammo_boost=7, hero_boost=300, damage_booster=1.5
 
@@ -524,7 +522,7 @@ enemy_speedx = 0.9
 enemy_speedy = 0.2
 num_verts = 0
 num_vs = 10
-num_rands=1
+num_rands = 1
 vert_hp = 0
 vs_hp = 200
 rands_hp = 20
@@ -541,5 +539,6 @@ fire_b_enemy = 0.5
 booster = True
 ammo_boost = 10
 hero_boost = 100
-level(enemy_speedx, enemy_speedy, num_verts, num_vs, num_rands, vert_hp, vs_hp, rands_hp, base, hero_hp, laser_cooldown, rockets_in
-      ,rocket_cooldown, limeted_lasers, lasers_p_enemy, fireballs_in, fire_ball_cooldown, fire_b_enemy, booster)
+level(enemy_speedx, enemy_speedy, num_verts, num_vs, num_rands, vert_hp, vs_hp, rands_hp, base, hero_hp, laser_cooldown,
+      rockets_in
+      , rocket_cooldown, limeted_lasers, lasers_p_enemy, fireballs_in, fire_ball_cooldown, fire_b_enemy, booster)
