@@ -1,4 +1,5 @@
 import pygame as pg
+
 from main import level
 
 # Initialize pygame
@@ -20,9 +21,12 @@ home_button_pic = pg.image.load(f'{PIC_PATH}home_button.png')
 # locks
 unlocked_lock = pg.image.load(f'{PIC_PATH}unlocked_level.png')
 locked_lock = pg.image.load(f'{PIC_PATH}locked_lock.png')
+locked_lock = pg.transform.scale(unlocked_lock, (64, 64))
+unlocked_lock = pg.transform.scale(unlocked_lock, (64, 64))
 # Levels
-levels = [[0.9, 0.8, 0, 5, 0, 0, 100, 0, 1, 500, 0.8, False, level],
-          [0.9, 0.8, 0, 5, 0, 0, 100, 0, 1, 500, 0.8, False, level]]
+levels = [
+    [0.9, 0.1, 0, 3, 0, 0, 100, 0, 1, 500, 0.3, level, True]
+]
 
 
 # Button class
@@ -46,7 +50,7 @@ class Button:
         if self.text:
             font = pg.font.Font(self.font, self.fontsize)
             img = font.render(self.text, True, self.fontcolor)
-            screen.blit(img, list(map(lambda x: x + 40, self.topleft)))
+            screen.blit(img, list(map(lambda x: x + 10, self.topleft)))
         else:
             pass
 
@@ -113,9 +117,10 @@ def levels_page():
 
     home_button = Button((0, 0), (100, 100), lambda: 0, go_home, home_button_pic)
     for level in levels:
-        for i in range(5):
-            level_button = level_icon((100 * (i + 1), 100 * (i + 1)), (100 * (i + 1) + 128, 100 * (i + 1) + 128), False,
-                                      str(levels.index(level) + 1))
+        x = ((levels.index(level) + 1) % 5) * 150
+        y = ((levels.index(level) + 1) // 5) * 150
+        locked = level[-1]
+        level_button = level_icon([x, y], [x + 128, y + 111], locked, levels.index(level) + 1)
     # Game loop
     while running_levels:
         screen.fill((0, 0, 0))
@@ -128,6 +133,8 @@ def levels_page():
                 home_button.attempt_click(mouse_pos[0], mouse_pos[1])
         for button in buttons:
             button.draw()
+            if not running_levels and type(button) == level_icon:
+                buttons.remove(button)
         pg.display.update()
 
 
