@@ -1,6 +1,6 @@
 import pygame as pg
 
-from main import level
+from template_level import level
 
 # Initialize pygame
 pg.init()
@@ -21,10 +21,11 @@ home_button_pic = pg.image.load(f'{PIC_PATH}home_button.png')
 # locks
 unlocked_lock = pg.image.load(f'{PIC_PATH}unlocked_level.png')
 locked_lock = pg.image.load(f'{PIC_PATH}locked_lock.png')
-locked_lock = pg.transform.scale(unlocked_lock, (64, 64))
+locked_lock = pg.transform.scale(locked_lock, (64, 64))
 unlocked_lock = pg.transform.scale(unlocked_lock, (64, 64))
 # Levels
 levels = [
+    [0.9, 0.1, 0, 3, 0, 0, 100, 0, 1, 500, 0.3, level, False],
     [0.9, 0.1, 0, 3, 0, 0, 100, 0, 1, 500, 0.3, level, True]
 ]
 
@@ -73,9 +74,12 @@ class level_icon(Button):
         self.locked = locked
         self.number = number
         if locked:
-            super().__init__(topleft, bottomright, lambda: 0, lambda: print('lol'), locked_lock)
+            super().__init__(topleft, bottomright, lambda: 0, lambda: 0, locked_lock)
         else:
-            super().__init__(topleft, bottomright, lambda: 0, lambda: print('lol'), unlocked_lock, str(number),
+            attributes = levels[number - 1][:-2]
+            print(attributes)
+            super().__init__(topleft, bottomright, lambda: 0, lambda: levels[number - 1][-2](*attributes),
+                             unlocked_lock, str(number),
                              'freesansbold.ttf', 50)
 
 
@@ -131,6 +135,8 @@ def levels_page():
             elif event.type == pg.MOUSEBUTTONUP:
                 mouse_pos = pg.mouse.get_pos()
                 home_button.attempt_click(mouse_pos[0], mouse_pos[1])
+                for b in buttons:
+                    b.attempt_click(mouse_pos[0], mouse_pos[1])
         for button in buttons:
             button.draw()
             if not running_levels and type(button) == level_icon:

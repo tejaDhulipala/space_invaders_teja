@@ -23,7 +23,6 @@ rocket_pic = pg.image.load(f'{PIC_PATH}rocket.png')
 background = pg.image.load(f'{PIC_PATH}output-onlinejpgtools.jpg')
 # Background music
 background_music = mixer.music.load(f'{SOUND_PATH}background_music.mp3')
-mixer.music.play(-1)
 # Title
 pg.display.set_caption('Space Invaders')
 icon = pg.image.load(f'{PIC_PATH}spaceship.png')
@@ -48,7 +47,6 @@ booster_and_pic = {'ammo': booster_ammo, 'base': booster_base, 'hero': booster_h
 possible_x = list(range(64, 801, 65))[:-1]
 # Fireball img, group
 fireball_img = pg.image.load(f'{PIC_PATH}Fireball.png')
-fireball_group = pg.sprite.Group()
 
 
 # V-descent
@@ -78,12 +76,14 @@ def random_descent(x, y, x_change, y_change):
 
 # Fireball Class
 class Fireball(pg.sprite.Sprite):
-    def __init__(self, x, y, angle):
+    def __init__(self, x, y, angle, group):
         self.x = x
         self.y = y
         self.rect = fireball_img.get_rect()
+        self.rect.topleft = (self.x, self.y)
         self.angle = angle
-        pg.sprite.Sprite.__init__(self, fireball_group)
+        self.group = group
+        pg.sprite.Sprite.__init__(self, group)
 
     def draw(self, screen):
         img = pg.transform.rotate(fireball_img, self.angle)
@@ -91,14 +91,22 @@ class Fireball(pg.sprite.Sprite):
 
     def update(self, speed):
         if self.angle > 270:
-            x_c = round(speed * sin(radians(self.angle - 270)), 1)
-            y_c = -round(speed * cos(radians(self.angle - 270)), 1)
+            x_c = speed * sin(radians(self.angle - 270))
+            y_c = -speed * cos(radians(self.angle - 270))
         elif self.angle <= 90:
-            x_c = -round(speed * sin(radians(self.angle)), 1)
-            y_c = -round(speed * cos(radians(self.angle)), 1)
-        else:
-            x_c = speed
-            y_c = 0
+            x_c = -speed * sin(radians(self.angle))
+            y_c = -speed * cos(radians(self.angle))
+        elif 90 < self.angle <= 180:
+            x_c = -speed * sin(radians(self.angle - 90))
+            y_c = speed * cos(radians(self.angle - 90))
+        elif 180 < self.angle <= 270:
+            x_c = speed * sin(radians(self.angle - 180))
+            y_c = -speed * cos(radians(self.angle))
+        if self.angle == 180:
+            x_c = 0
+            y_c = speed
+        self.rect = fireball_img.get_rect()
+        self.rect.topleft = (self.x, self.y)
         self.x += x_c
         self.y += y_c
 
@@ -106,20 +114,25 @@ class Fireball(pg.sprite.Sprite):
 # Class Hero
 class Hero(pg.sprite.Sprite):
     def __init__(self, x, y, hp, hero_group):
-        self.x = x - 32 * 1.41
-        self.y = y - 32 * 1.41
+        self.x = x
+        self.y = y
         self.hp = hp
         self.rect = playerImg.get_rect()
+        self.rect.topleft = (self.x, self.y)
         pg.sprite.Sprite.__init__(self, hero_group)
 
     def draw(self, screen):
         screen.blit(playerImg, (int(self.x), int(self.y)))
 
     def move_left(self, lag_multiplier, booster_speed_multiplier):
-        self.x -= 0.9 * lag_multiplier * booster_speed_multiplier
+        self.x -= 1.5 * lag_multiplier * booster_speed_multiplier
+        self.rect = playerImg.get_rect()
+        self.rect.topleft = (self.x, self.y)
 
     def move_right(self, lag_multiplier, booster_speed_multiplier):
-        self.x += 0.9 * lag_multiplier * booster_speed_multiplier
+        self.x += 1.5 * lag_multiplier * booster_speed_multiplier
+        self.rect = playerImg.get_rect()
+        self.rect.topleft = (self.x, self.y)
 
 
 # class Enemy
@@ -140,6 +153,7 @@ class Booster(pg.sprite.Sprite):
         self.y += 0.5 * lag_multiplier
 
     def apply_boost(self, ammo_boost, speed_mul):
+        # requires var fireballs_in
         if self.booster == 'ammo':
             if fireballs_in:
                 ammo_type = random.choice(['lasers', 'fireballs'])
@@ -223,14 +237,67 @@ class Rocket(pg.sprite.Sprite):
                 self.y -= y_change
 
 
+# Enemy Class
+class Enemy(pg.sprite.Sprite):
+    def __init__(self, descent, hp, enemyX_change, enemyY_change, group, image=enemyImg):
+        global possible_x, spawn_min, spawn_max
+        # Descent is a function that takes in an x and y and specifies the next x and y based on x_change and y_change
+        # It returns a tuple x, y
+        self.y = random.randrange(spawn_min, spawn_max)
+        if not possible_x:
+            possible_x = list(range(64, 801, 65))[:-1]
+            spawn_min -= wave_distance
+            spawn_max -= wave_distance
+            self.y = random.randrange(spawn_min, spawn_max)
+        self.x = random.choice(possible_x)
+        possible_x.remove(self.x)
+        self.image = image
+        self.rect = enemyImg.get_rect()
+        self.descent = descent
+        self.x_change = enemyX_change + random.randint(0, 5) / 100
+        self.y_change = enemyY_change + random.randint(0, 5) / 100
+        self.hp = hp
+        pg.sprite.Sprite.__init__(self, group)
+
+    def draw(self, screen):
+        screen.blit(self.image, (self.x, self.y))
+
+    def update(self):
+        self.x, self.y, self.x_change = self.descent(self.x, self.y, self.x_change, self.y_change)
+
+
+# Laser class
+class Laser(pg.sprite.Sprite):
+    def __init__(self, x, y, arr):
+        self.x = x
+        self.y = y
+        self.rect = lazer_pic.get_rect()
+        self.rect.topleft = [x, y]
+        self.image = lazer_pic
+        self.arr = arr
+        pg.sprite.Sprite.__init__(self)
+
+    def launch_lazer(self):
+        self.arr.append(self)
+
+    def draw_lazer(self, screen):
+        screen.blit(self.image, (round(self.x), round(self.y)))
+
+    def update_lazer(self, y_change):
+        self.y = (self.y - y_change)
+        self.rect = lazer_pic.get_rect()
+        self.rect.topleft = [self.x, self.y]
+
+
 def level(enemy_speedX, enemy_speedY, num_verticals, num_vs, num_rands, verticals_hp, vs_hp, rands_hp, base, hero_hp,
           laser_cooldown, rockets_in=True, rocket_cooldown=10, limeted_lasers=False, lasers_p_enemy=9,
           fireballs_in=True,
           fire_ball_cooldown=0.5, fireball_p_enemy=0.25, boosters=False, ammo_boost=7, hero_boost=300, speed_mul=1.5):
     # create screen
     screen = pg.display.set_mode((800, 700))
-
+    mixer.music.play(-1)
     # Global variables
+    fireball_group = pg.sprite.Group()
     rocketCooldown = -rocket_cooldown
     rocket_fired_tm = 0
     lazerCooldown = -laser_cooldown
@@ -269,60 +336,13 @@ def level(enemy_speedX, enemy_speedY, num_verticals, num_vs, num_rands, vertical
     # Explosion group
     exploded = pg.sprite.Group()
 
-    # Enemy Class
-    class Enemy(pg.sprite.Sprite):
-        def __init__(self, descent, hp, image=enemyImg):
-            global possible_x, spawn_min, spawn_max
-            # Descent is a function that takes in an x and y and specifies the next x and y based on x_change and y_change
-            # It returns a tuple x, y
-            self.y = random.randrange(spawn_min, spawn_max)
-            if not possible_x:
-                possible_x = list(range(64, 801, 65))[:-1]
-                spawn_min -= wave_distance
-                spawn_max -= wave_distance
-                self.y = random.randrange(spawn_min, spawn_max)
-            self.x = random.choice(possible_x)
-            possible_x.remove(self.x)
-            self.image = image
-            self.rect = enemyImg.get_rect()
-            self.descent = descent
-            self.x_change = enemyX_change + random.randint(0, 5) / 100
-            self.y_change = enemyY_change + random.randint(0, 5) / 100
-            self.hp = hp
-            pg.sprite.Sprite.__init__(self, weapons_n_aliens, enemies)
-
-        def draw(self):
-            screen.blit(self.image, (self.x, self.y))
-
-        def update(self):
-            self.x, self.y, self.x_change = list(self.descent(self.x, self.y, self.x_change, self.y_change))
-
-    # Laser class
-    class Laser(pg.sprite.Sprite):
-        def __init__(self, x, y):
-            self.x = x
-            self.y = y
-            self.rect = lazer_pic.get_rect()
-            self.rect.topleft = [x, y]
-            self.image = lazer_pic
-            pg.sprite.Sprite.__init__(self, weapons_n_aliens)
-
-        def launch_lazer(self):
-            nonlocal lasers_fired
-            lasers_fired.append(self)
-
-        def draw_lazer(self):
-            screen.blit(self.image, (round(self.x), round(self.y)))
-
-        def update_lazer(self, y_change):
-            self.y = (self.y - y_change)
-
-
     # Create 5 enemies
 
-    [weapons_n_aliens.add(Enemy(v_descent, vs_hp)) for _ in range(num_vs)]
-    [weapons_n_aliens.add(Enemy(y_descent, verticals_hp)) for _ in range(num_verticals)]
-    [weapons_n_aliens.add(Enemy(random_descent, rands_hp)) for _ in range(num_rands)]
+    [weapons_n_aliens.add(Enemy(v_descent, vs_hp, enemyX_change, enemyY_change, enemies)) for _ in range(num_vs)]
+    [weapons_n_aliens.add(Enemy(y_descent, verticals_hp, enemyX_change, enemyY_change, enemies)) for _ in
+     range(num_verticals)]
+    [weapons_n_aliens.add(Enemy(random_descent, rands_hp, enemyX_change, enemyY_change, enemies)) for _ in
+     range(num_rands)]
 
     ourHero = Hero(370, 480, hero_hp, hero_group)
 
@@ -333,13 +353,20 @@ def level(enemy_speedX, enemy_speedY, num_verticals, num_vs, num_rands, vertical
         screen.blit(score, (int(x), int(y)))
 
     frames = 0
+    """
+    ****
+    Game Loop
+    ****
+    """
     while running:
+        start = perf_counter()
         # background
         screen.fill((0, 0, 0))
         screen.blit(background, (0, 0))
         for event in pg.event.get():
             if event.type == pg.QUIT:
-                running = False
+                pg.quit()
+                quit(0)
         keys = pg.key.get_pressed()
         try:
             if (keys[pg.K_LEFT] or keys[pg.K_d]) and ourHero.x > 0:
@@ -355,7 +382,7 @@ def level(enemy_speedX, enemy_speedY, num_verticals, num_vs, num_rands, vertical
         elif keys[pg.K_2] and fireballs_in:
             weapon = 'fireball'
         if keys[pg.K_SPACE] and perf_counter() - laser_fired_tm > lazerCooldown and weapon == 'lazer' and laser_ammo:
-            a = Laser(ourHero.x + 27, ourHero.y + 35)
+            a = Laser(ourHero.x + 27, ourHero.y, lasers_fired)
             a.launch_lazer()
             laser_fired_tm = perf_counter()
             lazerCooldown = laser_cooldown
@@ -374,8 +401,8 @@ def level(enemy_speedX, enemy_speedY, num_verticals, num_vs, num_rands, vertical
             rocketCooldown = rocket_cooldown
         elif keys[
             pg.K_SPACE] and perf_counter() - fireball_fired_tm > fireballCooldown and weapon == 'fireball' and fire_ball_ammo > 0:
-            [Fireball(ourHero.x, ourHero.y, ang) for ang in range(0, 91, 30)]
-            [Fireball(ourHero.x, ourHero.y, ang) for ang in range(270, 360, 30)]
+            [Fireball(ourHero.x, ourHero.y, ang, fireball_group) for ang in range(0, 91, 30)]
+            [Fireball(ourHero.x, ourHero.y, ang, fireball_group) for ang in range(270, 360, 30)]
             fireball_fired_tm = perf_counter()
             fireballCooldown = fire_ball_cooldown
             fire_ball_ammo -= 1
@@ -396,13 +423,13 @@ def level(enemy_speedX, enemy_speedY, num_verticals, num_vs, num_rands, vertical
 
         [i.update_lazer(2) for i in lasers_fired]
         [lasers_fired.remove(i) for i in lasers_fired if i.y < 30]
-        [i.draw_lazer() for i in lasers_fired]
+        [i.draw_lazer(screen) for i in lasers_fired]
 
         [hero.draw(screen) for hero in hero_group]
 
         # Enemy checking / Drawing loop
         for enemy in enemies:
-            enemy.draw()
+            enemy.draw(screen)
             enemy.update()
             center_x = enemy.rect.center[0] + enemy.x
             center_y = enemy.rect.center[1] + enemy.y
@@ -421,7 +448,7 @@ def level(enemy_speedX, enemy_speedY, num_verticals, num_vs, num_rands, vertical
                     elif type(l) == Fireball:
                         fireball_group.remove(l)
                         enemy.hp -= 50
-                    else:
+                    elif type(l) == Fireball:
                         rockets_fired.remove(l)
                         enemy.hp -= 400
                     weapons_n_aliens.remove(l)
@@ -435,25 +462,27 @@ def level(enemy_speedX, enemy_speedY, num_verticals, num_vs, num_rands, vertical
             if enemy.y >= 490:
                 base -= 1
                 base = abs(base)
-            if distance(center_x, center_y, ourHero.rect.center[0] + ourHero.x,
-                        ourHero.rect.center[1] + ourHero.y) < radius:
+            if distance(center_x, center_y, ourHero.rect.center[0],
+                        ourHero.rect.center[1]) < radius:
+                Explosion(50, ourHero.x, ourHero.y, exploded, screen)
                 enemies.remove(enemy)
                 weapons_n_aliens.remove(enemy)
                 ourHero.hp -= 500
         # Booster is_hit loop
-        for booster in booster_group:
-            if distance(booster.x, booster.y, ourHero.x, ourHero.y) < 32 * 1.42:
-                booster_group.remove(booster)
-                effect = booster.apply_boost(ammo_boost, speed_mul)
-                laser_ammo += effect[0]
-                fire_ball_ammo += effect[1]
-                ourHero.hp += effect[2]
-                base += effect[3]
-                if effect[4]:
-                    booster_speed_multiplier *= effect[4]
+        if boosters:
+            for booster in booster_group:
+                if distance(booster.x, booster.y, ourHero.x, ourHero.y) < 32 * 1.42:
+                    booster_group.remove(booster)
+                    effect = booster.apply_boost(ammo_boost, speed_mul)
+                    laser_ammo += effect[0]
+                    fire_ball_ammo += effect[1]
+                    ourHero.hp += effect[2]
+                    base += effect[3]
+                    if effect[4]:
+                        booster_speed_multiplier *= effect[4]
 
         if ourHero.hp <= 0 and not hero_dead:
-            Explosion(100, ourHero.rect.center[0] + ourHero.x, ourHero.rect.center[1] + ourHero.y)
+            Explosion(100, ourHero.rect.center[0] + ourHero.x, ourHero.rect.center[1] + ourHero.y, exploded, screen)
             hero_group.remove(ourHero)
             hero_dead = True
 
@@ -545,10 +574,10 @@ def level(enemy_speedX, enemy_speedY, num_verticals, num_vs, num_rands, vertical
 if __name__ == '__main__':
     enemy_speedx = 0.9
     enemy_speedy = 0.1
-    num_verts = 0
-    num_vs = 10
-    num_rands = 1
-    vert_hp = 0
+    num_verts = 10
+    num_vs = 0
+    num_rands = 0
+    vert_hp = 100
     vs_hp = 200
     rands_hp = 20
     base = 1
@@ -560,11 +589,10 @@ if __name__ == '__main__':
     lasers_p_enemy = 3
     fireballs_in = True
     fire_ball_cooldown = 0.5
-    fire_b_enemy = 0
+    fire_b_enemy = 10
     booster = True
     ammo_boost = 10
     hero_boost = 100
     level(enemy_speedx, enemy_speedy, num_verts, num_vs, num_rands, vert_hp, vs_hp, rands_hp, base, hero_hp,
-          laser_cooldown,
-          rockets_in
-          , rocket_cooldown, limeted_lasers, lasers_p_enemy, fireballs_in, fire_ball_cooldown, fire_b_enemy, booster)
+          laser_cooldown, rockets_in, rocket_cooldown, limeted_lasers, lasers_p_enemy, fireballs_in, fire_ball_cooldown
+          , fire_b_enemy, False)
