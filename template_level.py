@@ -97,7 +97,7 @@ class Fireball(pg.sprite.Sprite):
             x_c = -speed * sin(radians(self.angle))
             y_c = -speed * cos(radians(self.angle))
         elif 90 < self.angle <= 180:
-            x_c = -speed * sin(radians(self.angle - 90))
+            x_c = -speed * sin(radians(self.angle))
             y_c = speed * cos(radians(self.angle - 90))
         elif 180 < self.angle <= 270:
             x_c = speed * sin(radians(self.angle - 180))
@@ -124,18 +124,18 @@ class Hero(pg.sprite.Sprite):
     def draw(self, screen):
         screen.blit(playerImg, (int(self.x), int(self.y)))
 
-    def move_left(self, lag_multiplier, booster_speed_multiplier):
-        self.x -= 1.5 * lag_multiplier * booster_speed_multiplier
+    def move_left(self, lag_multiplier, booster_speed_multiplier, norm_speed=1.3):
+        self.x -= norm_speed * lag_multiplier * booster_speed_multiplier
         self.rect = playerImg.get_rect()
         self.rect.topleft = (self.x, self.y)
 
-    def move_right(self, lag_multiplier, booster_speed_multiplier):
-        self.x += 1.5 * lag_multiplier * booster_speed_multiplier
+    def move_right(self, lag_multiplier, booster_speed_multiplier, norm_speed=1.3):
+        self.x += norm_speed * lag_multiplier * booster_speed_multiplier
         self.rect = playerImg.get_rect()
         self.rect.topleft = (self.x, self.y)
 
 
-# class Enemy
+# class Booster
 class Booster(pg.sprite.Sprite):
     def __init__(self, x, y, group):
         self.x = x
@@ -254,8 +254,8 @@ class Enemy(pg.sprite.Sprite):
         self.image = image
         self.rect = enemyImg.get_rect()
         self.descent = descent
-        self.x_change = enemyX_change + random.randint(0, 5) / 100
-        self.y_change = enemyY_change + random.randint(0, 5) / 100
+        self.x_change = enemyX_change + random.randint(0, 3) / 100
+        self.y_change = enemyY_change + random.randint(0, 3) / 100
         self.hp = hp
         pg.sprite.Sprite.__init__(self, group)
 

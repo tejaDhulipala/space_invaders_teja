@@ -56,7 +56,7 @@ class HarderEnemy(pg.sprite.Sprite):
                 self.laser_arr.append(laser)
                 self.ammo = 0
             elif self.ammo and self.state == 'fireballs':
-                [tl.Fireball(self.x, self.y, angle, self.fireball_arr) for angle in range(90, 271, 30)]
+                [tl.Fireball(self.x, self.y, angle, self.fireball_arr) for angle in range(120, 241, 30)]
                 self.ammo = 0
         else:
             self.ammo = 1
@@ -147,9 +147,13 @@ def Harderlevel(enemy_speedX, enemy_speedY, num_transparents, num_fireballs, num
         keys = pg.key.get_pressed()
         try:
             if (keys[pg.K_LEFT] or keys[pg.K_d]) and ourHero.x > 0:
-                [hero.move_left(lag_multiplier, booster_speed_multiplier) for hero in hero_group]
+                ourHero.move_left(lag_multiplier, booster_speed_multiplier, 1.5)
             elif (keys[pg.K_RIGHT] or keys[pg.K_a]) and ourHero.x < 800 - 64:
-                [hero.move_right(lag_multiplier, booster_speed_multiplier) for hero in hero_group]
+                ourHero.move_right(lag_multiplier, booster_speed_multiplier, 1.5)
+            elif (keys[pg.K_UP] or keys[pg.K_w]) and ourHero.y > 360:
+                ourHero.y -= 1
+            elif (keys[pg.K_DOWN] or keys[pg.K_s]) and ourHero.y <= 480:
+                ourHero.y += 1
         except NameError:
             pass
         if keys[pg.K_0]:
@@ -176,8 +180,8 @@ def Harderlevel(enemy_speedX, enemy_speedY, num_transparents, num_fireballs, num
             b.launch_rocket()
             rocket_fired_tm = perf_counter()
             rocketCooldown = rocket_cooldown
-        elif keys[
-            pg.K_SPACE] and perf_counter() - fireball_fired_tm > fireballCooldown and weapon == 'fireball' and fire_ball_ammo > 0:
+        elif keys[pg.K_SPACE] and perf_counter() - fireball_fired_tm > fireballCooldown and weapon == 'fireball' \
+                and fire_ball_ammo > 0:
             [tl.Fireball(ourHero.x, ourHero.y, ang, good_fireballs) for ang in range(0, 91, 30)]
             [tl.Fireball(ourHero.x, ourHero.y, ang, good_fireballs) for ang in range(270, 360, 30)]
             fireball_fired_tm = perf_counter()
@@ -189,7 +193,7 @@ def Harderlevel(enemy_speedX, enemy_speedY, num_transparents, num_fireballs, num
             [good_fireballs.remove(i) for i in good_fireballs if i.y < 30 or i.x < 0 or i.x > 800]
             [i.draw(screen) for i in good_fireballs]
 
-        [i.update(2) for i in bad_fireballs]
+        [i.update(1) for i in bad_fireballs]
         [bad_fireballs.remove(i) for i in bad_fireballs if i.y > 480 or i.x < 0 or i.x > 800]
         [i.draw(screen) for i in bad_fireballs]
 
