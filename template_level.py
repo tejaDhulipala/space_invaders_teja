@@ -22,7 +22,7 @@ rocket_pic = pg.image.load(f'{PIC_PATH}rocket.png')
 # Background
 background = pg.image.load(f'{PIC_PATH}output-onlinejpgtools.jpg')
 # Background music
-background_music = mixer.music.load(f'{SOUND_PATH}background_music.mp3')
+#background_music = mixer.music.load(f'{SOUND_PATH}background_music.mp3')
 # Title
 pg.display.set_caption('Space Invaders')
 icon = pg.image.load(f'{PIC_PATH}spaceship.png')
@@ -295,7 +295,7 @@ def level(enemy_speedX, enemy_speedY, num_verticals, num_vs, num_rands, vertical
           fire_ball_cooldown=0.5, fireball_p_enemy=0.25, boosters=False, ammo_boost=7, hero_boost=300, speed_mul=1.5):
     # create screen
     screen = pg.display.set_mode((800, 700))
-    mixer.music.play(-1)
+    #mixer.music.play(-1)
     # Global variables
     fireball_group = pg.sprite.Group()
     rocketCooldown = -rocket_cooldown
@@ -555,11 +555,13 @@ def level(enemy_speedX, enemy_speedY, num_verticals, num_vs, num_rands, vertical
             font = pg.font.Font('freesansbold.ttf', 50)
             you_won = font.render('All Enemies Destroyed', True, (0, 0, 255))
             screen.blit(you_won, (100, 275))
+            return laser_ammo, fire_ball_ammo
         else:
             screen.fill((255, 0, 0))
             font = pg.font.Font('freesansbold.ttf', 50)
             you_won = font.render('Game Over', True, (255, 255, 255))
             screen.blit(you_won, (300, 275))
+            return False
         frames2 += 1
         if frames2 == 400:
             running2 = False
@@ -573,7 +575,7 @@ def level(enemy_speedX, enemy_speedY, num_verticals, num_vs, num_rands, vertical
 
 if __name__ == '__main__':
     enemy_speedx = 0.9
-    enemy_speedy = 0.1
+    enemy_speedy = 0.01
     num_verts = 10
     num_vs = 0
     num_rands = 0
@@ -593,6 +595,14 @@ if __name__ == '__main__':
     booster = True
     ammo_boost = 10
     hero_boost = 100
-    level(enemy_speedx, enemy_speedy, num_verts, num_vs, num_rands, vert_hp, vs_hp, rands_hp, base, hero_hp,
-          laser_cooldown, rockets_in, rocket_cooldown, limeted_lasers, lasers_p_enemy, fireballs_in, fire_ball_cooldown
-          , fire_b_enemy, False)
+    i = 0
+    while level(enemy_speedx, enemy_speedy, num_verts, num_vs, num_rands, vert_hp, vs_hp, rands_hp, base, hero_hp,
+              laser_cooldown, rockets_in, rocket_cooldown, limeted_lasers, lasers_p_enemy, fireballs_in, fire_ball_cooldown
+              , fire_b_enemy, False) != False:
+        enemy_speedx *= 1.1
+        num_verts += 1
+        num_vs += 1
+        num_rands += 1
+        lasers_p_enemy -= 0.1
+        i += 1
+
