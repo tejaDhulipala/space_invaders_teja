@@ -596,13 +596,14 @@ if __name__ == '__main__':
     ammo_boost = 10
     hero_boost = 100
     i = 0
-    while level(enemy_speedx, enemy_speedy, num_verts, num_vs, num_rands, vert_hp, vs_hp, rands_hp, base, hero_hp,
+    while (x := level(enemy_speedx, enemy_speedy, num_verts, num_vs, num_rands, vert_hp, vs_hp, rands_hp, base, hero_hp,
               laser_cooldown, rockets_in, rocket_cooldown, limeted_lasers, lasers_p_enemy, fireballs_in, fire_ball_cooldown
-              , fire_b_enemy, False) != False:
+              , fire_b_enemy, False)) != False:
         enemy_speedx *= 1.1
         num_verts += 1
         num_vs += 1
         num_rands += 1
         lasers_p_enemy -= 0.1
+        fire_b_enemy -= 0.1
         i += 1
 
